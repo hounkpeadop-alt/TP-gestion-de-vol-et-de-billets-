@@ -1,0 +1,299 @@
+#include <iostream>
+#include <string>
+#include <vector>
+using namespace std;
+
+// ================= CLASSE PASSAGER =================
+class Passager {
+private:
+    int id;
+    string nom, prenom, passeport, telephone;
+public:
+    Passager(int id, string nom, string prenom, string passeport, string tel) {
+        this->id = id;
+        this->nom = nom;
+        this->prenom = prenom;
+        this->passeport = passeport;
+        this->telephone = tel;
+    }
+    int getId() { return id; }
+    void afficher() {
+        cout << "Passager " << id << " : " << prenom << " " << nom
+             << " | Passeport: " << passeport << " | Tel: " << telephone << endl;
+    }
+};
+
+// ================= CLASSE VOL =================
+class Vol {
+private:
+    string numeroVol, origine, destination, date;
+    int capacite, placesReservees;
+    double prix;
+public:
+    Vol(string num, string ori, string dest, string date, int cap, double prix) {
+        this->numeroVol = num;
+        this->origine = ori;
+        this->destination = dest;
+        this->date = date;
+        this->capacite = cap;
+        this->prix = prix;
+        this->placesReservees = 0;
+    }
+    string getNumero() { return numeroVol; }
+    double getPrix() { return prix; }
+    string getOrigine() { return origine; }
+    string getDestination() { return destination; }
+    int getPlacesLibres() { return capacite - placesReservees; }
+    bool estDisponible() { return placesReservees < capacite; }
+    void reserverPlace() { placesReservees++; }
+    void libererPlace() { if (placesReservees > 0) placesReservees--; }
+    void afficher() {
+        cout << "Vol " << numeroVol << " : " << origine << " -> " << destination
+             << " | Date: " << date << " | Prix: " << prix
+             << " FCFA | Places libres: " << getPlacesLibres() << "/" << capacite << endl;
+    }
+};
+
+// ================= CLASSE RESERVATION =================
+class Reservation {
+private:
+    int id, idPassager;
+    string numeroVol;
+    string statut; // En attente, Confirmee, Annulee
+public:
+    Reservation(int id, int idPass, string numVol) {
+        this->id = id;
+        this->idPassager = idPass;
+        this->numeroVol = numVol;
+        this->statut = "En attente";
+    }
+    int getId() { return id; }
+    int getIdPassager() { return idPassager; }
+    string getNumeroVol() { return numeroVol; }
+    string getStatut() { return statut; }
+    void confirmer() { statut = "Confirmee"; }
+    void annuler() { statut = "Annulee"; }
+    void afficher() {
+        cout << "Reservation " << id << " | Passager: " << idPassager
+             << " | Vol: " << numeroVol << " | Statut: " << statut << endl;
+    }
+};
+
+// ================= CLASSE PAIEMENT =================
+class Paiement {
+private:
+    int id, idReservation;
+    double montant;
+    string mode, statut;
+public:
+    Paiement(int id, int idRes, double montant, string mode) {
+        this->id = id;
+        this->idReservation = idRes;
+        this->montant = montant;
+        this->mode = mode;
+        this->statut = "Paye";
+    }
+    int getIdReservation() { return idReservation; }
+    void afficher() {
+        cout << "Paiement " << id << " | Reservation: " << idReservation
+             << " | Montant: " << montant << " | Mode: " << mode
+             << " | Statut: " << statut << endl;
+    }
+};
+
+// ================= CLASSE AGENCE =================
+// C'est la classe centrale qui contient toutes les listes
+class Agence {
+private:
+    // Attributs
+    vector<Passager> passagers;
+    vector<Vol> vols;
+    vector<Reservation> reservations;
+    vector<Paiement> paiements;
+    int compteurPassager = 1;
+    int compteurRes = 1;
+    int compteurPay = 1;
+
+    // Methodes privees pour retrouver un objet
+    int trouverPassager(int id) {
+        for (int i = 0; i < passagers.size(); i++)
+            if (passagers[i].getId() == id) return i;
+        return -1;
+    }
+    int trouverVol(string num) {
+        for (int i = 0; i < vols.size(); i++)
+            if (vols[i].getNumero() == num) return i;
+        return -1;
+    }
+    int trouverReservation(int id) {
+        for (int i = 0; i < reservations.size(); i++)
+            if (reservations[i].getId() == id) return i;
+        return -1;
+    }
+
+public:
+    // 1. Enregistrer un passager
+    void enregistrerPassager() {
+        string nom, prenom, passeport, tel;
+        cout << "Nom: "; cin >> nom;
+        cout << "Prenom: "; cin >> prenom;
+        cout << "Passeport: "; cin >> passeport;
+        cout << "Telephone: "; cin >> tel;
+        passagers.push_back(Passager(compteurPassager, nom, prenom, passeport, tel));
+        cout << "Passager enregistre avec ID " << compteurPassager << endl;
+        compteurPassager++;
+    }
+
+    // 2. Ajouter un vol
+    void ajouterVol() {
+        string num, ori, dest, date;
+        int cap; double prix;
+        cout << "Numero vol (ex: BJ101): "; cin >> num;
+        cout << "Origine: "; cin >> ori;
+        cout << "Destination: "; cin >> dest;
+        cout << "Date: "; cin >> date;
+        cout << "Capacite: "; cin >> cap;
+        cout << "Prix: "; cin >> prix;
+        vols.push_back(Vol(num, ori, dest, date, cap, prix));
+        cout << "Vol ajoute !" << endl;
+    }
+
+    // 3. Afficher les vols disponibles
+    void afficherVolsDisponibles() {
+        cout << "\n--- VOLS DISPONIBLES ---" << endl;
+        for (int i = 0; i < vols.size(); i++)
+            if (vols[i].estDisponible()) vols[i].afficher();
+    }
+
+    // 4. Rechercher un vol
+    void rechercherVol() {
+        string num; cout << "Numero vol: "; cin >> num;
+        int idx = trouverVol(num);
+        if (idx == -1) cout << "Vol introuvable !" << endl;
+        else vols[idx].afficher();
+    }
+
+    // 5. Effectuer une reservation
+    void effectuerReservation() {
+        int idPass; string numVol;
+        cout << "ID passager: "; cin >> idPass;
+        cout << "Numero vol: "; cin >> numVol;
+
+        int p = trouverPassager(idPass);
+        if (p == -1) { cout << "ERREUR Regle 1: Passager non enregistre !" << endl; return; }
+
+        int v = trouverVol(numVol);
+        if (v == -1) { cout << "Vol introuvable !" << endl; return; }
+
+        if (!vols[v].estDisponible()) { cout << "ERREUR Regle 2: Vol complet !" << endl; return; }
+
+        for (int i = 0; i < reservations.size(); i++) {
+            if (reservations[i].getIdPassager() == idPass &&
+                reservations[i].getNumeroVol() == numVol &&
+                reservations[i].getStatut() != "Annulee") {
+                cout << "ERREUR Regle 3: Deja reserve ce vol !" << endl; return;
+            }
+        }
+
+        reservations.push_back(Reservation(compteurRes, idPass, numVol));
+        cout << "Reservation creee N°" << compteurRes << " (En attente de paiement)" << endl;
+        compteurRes++;
+    }
+
+    // 6. Enregistrer un paiement
+    void enregistrerPaiement() {
+        int idRes; string mode;
+        cout << "ID reservation: "; cin >> idRes;
+        int r = trouverReservation(idRes);
+        if (r == -1) { cout << "Reservation introuvable !" << endl; return; }
+
+        if (reservations[r].getStatut() == "Annulee") {
+            cout << "ERREUR Regle 5: Reservation annulee, paiement impossible !" << endl; return;
+        }
+        if (reservations[r].getStatut() == "Confirmee") {
+            cout << "Deja payee !" << endl; return;
+        }
+
+        int v = trouverVol(reservations[r].getNumeroVol());
+        double montant = vols[v].getPrix();
+        cout << "Mode (MTN/Moov/Especes/Carte): "; cin >> mode;
+
+        paiements.push_back(Paiement(compteurPay, idRes, montant, mode));
+        compteurPay++;
+        reservations[r].confirmer();
+        vols[v].reserverPlace();
+        cout << "Paiement de " << montant << " FCFA reussi. Reservation CONFIRMEE." << endl;
+    }
+
+    // 7. Annuler une reservation
+    void annulerReservation() {
+        int idRes; cout << "ID reservation: "; cin >> idRes;
+        int r = trouverReservation(idRes);
+        if (r == -1) { cout << "Introuvable !" << endl; return; }
+        if (reservations[r].getStatut() == "Annulee") { cout << "Deja annulee !" << endl; return; }
+
+        bool etaitPayee = (reservations[r].getStatut() == "Confirmee");
+        reservations[r].annuler();
+
+        if (etaitPayee) {
+            int v = trouverVol(reservations[r].getNumeroVol());
+            vols[v].libererPlace();
+            cout << "Reservation annulee. Remboursement a traiter." << endl;
+        } else {
+            cout << "Reservation annulee (pas payee, pas de remboursement)." << endl;
+        }
+    }
+
+    // 8. Consulter les reservations
+    void consulterReservations() {
+        cout << "\n--- TOUTES LES RESERVATIONS ---" << endl;
+        for (int i = 0; i < reservations.size(); i++) reservations[i].afficher();
+        cout << "--- PAIEMENTS ---" << endl;
+        for (int i = 0; i < paiements.size(); i++) paiements[i].afficher();
+    }
+
+    // 9. Afficher les informations d'une reservation
+    void afficherUneReservation() {
+        int idRes; cout << "ID reservation: "; cin >> idRes;
+        int r = trouverReservation(idRes);
+        if (r == -1) { cout << "Introuvable !" << endl; return; }
+        reservations[r].afficher();
+        int p = trouverPassager(reservations[r].getIdPassager());
+        if (p != -1) passagers[p].afficher();
+        int v = trouverVol(reservations[r].getNumeroVol());
+        if (v != -1) vols[v].afficher();
+    }
+};
+
+// ================= MAIN =================
+int main() {
+    Agence agence;
+    int choix;
+    do {
+        cout << "\n===== AGENCE DE VOYAGE COTONOU =====" << endl;
+        cout << "1. Enregistrer un passager" << endl;
+        cout << "2. Ajouter un vol" << endl;
+        cout << "3. Afficher les vols disponibles" << endl;
+        cout << "4. Rechercher un vol" << endl;
+        cout << "5. Effectuer une reservation" << endl;
+        cout << "6. Enregistrer un paiement" << endl;
+        cout << "7. Annuler une reservation" << endl;
+        cout << "8. Consulter les reservations" << endl;
+        cout << "9. Afficher les informations d'une reservation" << endl;
+        cout << "10. Quitter" << endl;
+        cout << "Choix: "; cin >> choix;
+
+        if (choix == 1) agence.enregistrerPassager();
+        else if (choix == 2) agence.ajouterVol();
+        else if (choix == 3) agence.afficherVolsDisponibles();
+        else if (choix == 4) agence.rechercherVol();
+        else if (choix == 5) agence.effectuerReservation();
+        else if (choix == 6) agence.enregistrerPaiement();
+        else if (choix == 7) agence.annulerReservation();
+        else if (choix == 8) agence.consulterReservations();
+        else if (choix == 9) agence.afficherUneReservation();
+    } while (choix != 10);
+
+    cout << "Au revoir !" << endl;
+    return 0;
+}
